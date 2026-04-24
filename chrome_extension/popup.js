@@ -7,11 +7,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainDiv = document.getElementById('main');
     const setupDiv = document.getElementById('setup');
     const apiKeyInput = document.getElementById('apiKey');
+    const serverUrlInput = document.getElementById('serverUrl');
 
-    // Проверяем есть ли API ключ
-    chrome.storage.sync.get(['apiKey'], (result) => {
-        if (!result.apiKey) {
-            showStatus('Настрой API ключ в настройках', 'info');
+    // Проверяем есть ли API ключ и URL сервера
+    chrome.storage.sync.get(['apiKey', 'serverUrl'], (result) => {
+        if (!result.apiKey || !result.serverUrl) {
+            showStatus('Настрой URL сервера и API ключ в настройках', 'info');
         }
     });
 
@@ -20,9 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
         mainDiv.style.display = 'none';
         setupDiv.classList.add('active');
 
-        chrome.storage.sync.get(['apiKey'], (result) => {
+        chrome.storage.sync.get(['apiKey', 'serverUrl'], (result) => {
             if (result.apiKey) {
                 apiKeyInput.value = result.apiKey;
+            }
+            if (result.serverUrl) {
+                serverUrlInput.value = result.serverUrl;
             }
         });
     });
@@ -33,20 +37,21 @@ document.addEventListener('DOMContentLoaded', () => {
         mainDiv.style.display = 'block';
     });
 
-    // Сохранить API ключ
+    // Сохранить настройки
     saveKeyBtn.addEventListener('click', () => {
         const apiKey = apiKeyInput.value.trim();
+        const serverUrl = serverUrlInput.value.trim().replace(/\/$/, ''); // Убираем слэш в конце
 
-        if (apiKey) {
-            chrome.storage.sync.set({ apiKey: apiKey }, () => {
-                showStatus('API ключ сохранен!', 'success');
+        if (apiKey && serverUrl) {
+            chrome.storage.sync.set({ apiKey: apiKey, serverUrl: serverUrl }, () => {
+                showStatus('Настройки сохранены!', 'success');
                 setTimeout(() => {
                     setupDiv.classList.remove('active');
                     mainDiv.style.display = 'block';
                 }, 1500);
             });
         } else {
-            showStatus('Введи API ключ', 'error');
+            showStatus('Введи URL сервера и API ключ', 'error');
         }
     });
 

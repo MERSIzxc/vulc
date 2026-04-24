@@ -175,9 +175,9 @@ async function parseGrades() {
 }
 
 // Отправляем оценки на сервер
-async function sendGradesToServer(grades, apiKey) {
+async function sendGradesToServer(grades, apiKey, serverUrl) {
     try {
-        const response = await fetch('http://127.0.0.1:8000/api/import-grades/', {
+        const response = await fetch(`${serverUrl}/api/import-grades/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -204,9 +204,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'parseGrades') {
         parseGrades().then(grades => {
             if (grades.length > 0) {
-                chrome.storage.sync.get(['apiKey'], (result) => {
+                chrome.storage.sync.get(['apiKey', 'serverUrl'], (result) => {
                     if (result.apiKey) {
-                        sendGradesToServer(grades, result.apiKey)
+                        const serverUrl = result.serverUrl || 'http://127.0.0.1:8000';
+                        sendGradesToServer(grades, result.apiKey, serverUrl)
                             .then(response => {
                                 sendResponse({
                                     success: true,
