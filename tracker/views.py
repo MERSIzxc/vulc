@@ -28,19 +28,23 @@ def dashboard(request):
     ]
 
     for g in manual_grades:
-        grade_date = datetime.strptime(g['date'], '%d.%m.%Y')
-        grade_date = timezone.make_aware(grade_date)
+        try:
+            grade_date = datetime.strptime(g['date'], '%d.%m.%Y')
+            grade_date = timezone.make_aware(grade_date)
 
-        if not Grade.objects.filter(user=user, subject=g['subject'], value=g['value'], date=grade_date).exists():
-            Grade.objects.create(
-                user=user,
-                subject=g['subject'],
-                value=g['value'],
-                weight=1,
-                date=grade_date,
-                description='',
-                teacher=''
-            )
+            if not Grade.objects.filter(user=user, subject=g['subject'], value=g['value'], date=grade_date).exists():
+                Grade.objects.create(
+                    user=user,
+                    subject=g['subject'],
+                    value=g['value'],
+                    weight=1,
+                    date=grade_date,
+                    description='',
+                    teacher=''
+                )
+        except Exception as e:
+            print(f"Error adding manual grade: {e}")
+            continue
 
     grades = Grade.objects.filter(user=user).order_by('subject', '-date')
 
@@ -134,7 +138,20 @@ def dashboard(request):
         # Ширина графика в пикселях (примерно, будет масштабироваться)
         graph_width = 900
 
-        for i, date_str in enumerate(sorted(grades_by_date.keys(), key=lambda d: tuple(map(int, d.split('.')[::-1])))):
+        # Фильтруем и сортируем даты, пропуская неправильные
+        valid_dates = []
+        for date_str in grades_by_date.keys():
+            try:
+                # Проверяем что дата валидна
+                datetime.strptime(date_str, '%d.%m.%Y')
+                valid_dates.append(date_str)
+            except:
+                print(f"Skipping invalid date: {date_str}")
+                continue
+
+        sorted_dates = sorted(valid_dates, key=lambda d: tuple(map(int, d.split('.')[::-1])))
+
+        for i, date_str in enumerate(sorted_dates):
             # Берем последнее кумулятивное значение для этой даты
             last_grade = grades_by_date[date_str][-1]
             avg = round((last_grade['cumulative_received'] / last_grade['cumulative_maximum']) * 100, 1)
