@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои оценки - Vulcan Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+        }
+        header h1 {
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+        }
+        header p {
+            color: #ffffff;
+        }
+        .api-key-box {
+            background: #0f0f0f;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border: 1px solid #ffffff;
+        }
+        .api-key-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #ffffff;
+        }
+        .api-key-box input {
+            width: 100%;
+            padding: 10px;
+            font-family: monospace;
+            background: #1a1a1a;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #ffffff;
+        }
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .subject-btn {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ffffff;
+            cursor: pointer;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.15);
+            transition: all 0.3s;
+            text-align: left;
+            position: relative;
+        }
+        .subject-btn.low-grade {
+            border-color: #ff0000;
+            box-shadow: 0 0 6px rgba(255, 0, 0, 0.3);
+        }
+        .subject-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+        }
+        .subject-btn.low-grade:hover {
+            box-shadow: 0 0 12px rgba(255, 0, 0, 0.5);
+        }
+        .subject-btn h2 {
+            color: #ffffff;
+            font-size: 18px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 4px rgba(255, 255, 255, 0.25);
+        }
+        .subject-btn .count {
+            color: #cccccc;
+            font-size: 14px;
+        }
+        .subject-btn .average {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+        .modal-content::-webkit-scrollbar {
+            width: 12px;
+        }
+        .modal-content::-webkit-scrollbar-track {
+            background: #0a0a0a;
+            border-radius: 10px;
+        }
+        .modal-content::-webkit-scrollbar-thumb {
+            background: #ffffff;
+            border-radius: 10px;
+            border: 2px solid #1a1a1a;
+        }
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: #cccccc;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4a90e2;
+        }
+        .modal-header h2 {
+            color: #4a90e2;
+            margin: 0;
+            text-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
+        }
+        .close-btn {
+            background: #4a90e2;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
+        }
+        .close-btn:hover {
+            background: #5ba3f5;
+            box-shadow: 0 0 8px rgba(74, 144, 226, 0.4);
+        }
+        .grades-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .grade-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            background: #0f0f0f;
+            border-radius: 8px;
+            align-items: center;
+            border: 1px solid #4a90e2;
+        }
+        .grade-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a90e2;
+            min-width: 80px;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
+        }
+        .grade-details {
+            flex: 1;
+        }
+        .grade-details p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #6ba8e5;
+        }
+        .grade-date {
+            color: #4a90e2;
+            font-size: 13px;
+        }
+        .no-data {
+            background: #1a1a1a;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            color: #30914a;
+            border: 2px solid #30914a;
+            box-shadow: 0 0 8px rgba(48, 145, 74, 0.15);
+        }
+        .chart-container {
+            margin-top: 30px;
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        .chart-container h2 {
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+            position: relative;
+        }
+        .chart-label {
+            min-width: 200px;
+            max-width: 200px;
+            color: #ffffff;
+            font-size: 14px;
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .chart-bar-container {
+            flex: 1;
+            background: #0a0a0a;
+            border-radius: 5px;
+            height: 30px;
+            position: relative;
+            overflow: visible;
+        }
+        .chart-bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+            position: relative;
+            min-width: 50px;
+        }
+        .chart-bar-text {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .history-chart {
+            margin-top: 30px;
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+        }
+        .history-chart h2 {
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .chart-svg {
+            width: 100%;
+            height: 300px;
+            background: #0a0a0a;
+            border-radius: 5px;
+        }
+        .tooltip {
+            position: fixed;
+            background: #1a1a1a;
+            border: 2px solid #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s;
+            z-index: 10000;
+            max-width: 300px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        .tooltip.active {
+            opacity: 1;
+        }
+        .tooltip-date {
+            color: #ffffff;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .tooltip-average {
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        .tooltip-grades {
+            border-top: 1px solid #333;
+            padding-top: 8px;
+        }
+        .tooltip-grade {
+            color: #cccccc;
+            font-size: 12px;
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Мои оценки</h1>
+            {% if last_sync %}
+            <p style="color: #999; font-size: 14px;">Последнее обновление: {{ last_sync|date:"d.m.Y H:i" }}</p>
+            {% endif %}
+
+            <div class="api-key-box">
+                <h3>API ключ для расширения Chrome:</h3>
+                <input type="text" value="{{ api_key }}" readonly onclick="this.select()">
+            </div>
+        </header>
+
+        {% if subjects %}
+        <div class="subjects-grid">
+            {% for subject, subject_data in subjects.items %}
+            <button class="subject-btn {% if subject_data.average < 40 %}low-grade{% endif %}" onclick="openModal('{{ subject|escapejs }}')">
+                <h2>{{ subject }}</h2>
+                <p class="count">{{ subject_data.grades|length }} оценок</p>
+                <span class="average">{{ subject_data.average }}%</span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Диаграмма предметов по возрастанию -->
+        {% load l10n %}
+        <div class="chart-container">
+            <h2>Статистика по предметам {% if last_sync %}(обновлено {{ last_sync|date:"d.m.Y H:i" }}){% endif %}</h2>
+
+            <!-- Средний процент -->
+            <div class="chart-bar" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #333;">
+                <div class="chart-label" style="font-weight: bold;">Средний процент</div>
+                <div class="chart-bar-container">
+                    <div class="chart-bar-fill" style="width: {% localize off %}{{ overall_average }}{% endlocalize %}%; background: #888888;"></div>
+                    <div class="chart-bar-text">{{ overall_average }}% ({{ overall_received|floatformat:1 }}/{{ overall_maximum|floatformat:0 }})</div>
+                </div>
+            </div>
+
+            {% for subject, subject_data in subjects_sorted %}
+            <div class="chart-bar">
+                <div class="chart-label">{{ subject }}</div>
+                <div class="chart-bar-container">
+                    <!-- Белая отметка на 40% -->
+                    <div style="position: absolute; left: 40%; top: 0; bottom: 0; width: 2px; background: #ffffff; z-index: 2;"></div>
+                    <div class="chart-bar-fill" style="width: {% localize off %}{{ subject_data.average }}{% endlocalize %}%; background: {% if subject_data.average < 40 %}#ff4444{% elif subject_data.average < 60 %}#ffaa00{% elif subject_data.average < 80 %}#88dd44{% else %}#44dd88{% endif %}; position: relative; z-index: 1;"></div>
+                    <div class="chart-bar-text">{{ subject_data.average }}% ({{ subject_data.total_received|floatformat:1 }}/{{ subject_data.total_maximum|floatformat:0 }})</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Historical Average Graph -->
+        {% if history_data %}
+        {% load l10n %}
+        <div class="history-chart">
+            <h2>Историческая средняя оценка {% if last_sync %}(обновлено {{ last_sync|date:"d.m.Y H:i" }}){% endif %}</h2>
+            <div style="position: relative; background: #0a0a0a; border-radius: 5px; padding: 20px;">
+                <svg width="100%" height="450" viewBox="0 0 1000 450" preserveAspectRatio="xMidYMid meet" style="background: #0a0a0a;" id="history-svg">
+                    <!-- Grid lines -->
+                    <line x1="50" y1="50" x2="950" y2="50" stroke="#333" stroke-width="1"/>
+                    <line x1="50" y1="125" x2="950" y2="125" stroke="#333" stroke-width="1"/>
+                    <line x1="50" y1="200" x2="950" y2="200" stroke="#333" stroke-width="1"/>
+                    <line x1="50" y1="275" x2="950" y2="275" stroke="#333" stroke-width="1"/>
+                    <line x1="50" y1="350" x2="950" y2="350" stroke="#333" stroke-width="1"/>
+
+                    <!-- Y-axis labels -->
+                    <text x="5" y="55" fill="#ffffff" font-size="14">100%</text>
+                    <text x="10" y="130" fill="#ffffff" font-size="14">75%</text>
+                    <text x="10" y="205" fill="#ffffff" font-size="14">50%</text>
+                    <text x="10" y="280" fill="#ffffff" font-size="14">25%</text>
+                    <text x="15" y="355" fill="#ffffff" font-size="14">0%</text>
+
+                    <!-- Вертикальные линии месяцев -->
+                    {% for month in month_lines %}
+                    <line x1="{% localize off %}{{ month.x }}{% endlocalize %}" y1="50" x2="{% localize off %}{{ month.x }}{% endlocalize %}" y2="350" stroke="#555" stroke-width="1" stroke-dasharray="5,5"/>
+                    <text x="{% localize off %}{{ month.x }}{% endlocalize %}" y="375" fill="#ffffff" font-size="12" text-anchor="middle">{{ month.label }}</text>
+                    {% endfor %}
+
+                    <!-- Линии предметов (полупрозрачные) -->
+                    {% for line in subject_lines %}
+                    <polyline
+                        class="subject-line"
+                        data-subject="{{ line.subject|escapejs }}"
+                        fill="none"
+                        stroke="{{ line.color }}"
+                        stroke-width="2"
+                        opacity="0.4"
+                        points="{% for point in line.data %}{% localize off %}{{ point.x }}{% endlocalize %},{% localize off %}{{ point.y }}{% endlocalize %}{% if not forloop.last %} {% endif %}{% endfor %}"
+                        style="pointer-events: stroke; cursor: pointer;"
+                    />
+                    <!-- Точки на линии предмета (все точки) -->
+                    {% for point in line.data %}
+                    <circle
+                        cx="{% localize off %}{{ point.x }}{% endlocalize %}"
+                        cy="{% localize off %}{{ point.y }}{% endlocalize %}"
+                        r="3"
+                        fill="{{ line.color }}"
+                        stroke="#0a0a0a"
+                        stroke-width="1"
+                        opacity="0.6"
+                        style="pointer-events: none;"
+                    />
+                    {% endfor %}
+                    <!-- Подпись предмета в конце линии -->
+                    {% with last_point=line.data|last %}
+                    <text
+                        x="{% localize off %}{{ last_point.x|add:'10' }}{% endlocalize %}"
+                        y="{% localize off %}{{ line.label_y|add:'5' }}{% endlocalize %}"
+                        fill="{{ line.color }}"
+                        font-size="11"
+                        opacity="0.7"
+                    >{{ line.subject }}</text>
+                    {% endwith %}
+                    {% endfor %}
+
+                    <!-- Невидимая толстая линия для захвата курсора -->
+                    <polyline
+                        id="graph-line-hitarea"
+                        fill="none"
+                        stroke="transparent"
+                        stroke-width="30"
+                        points="{% for point in history_data %}{% localize off %}{{ point.x }}{% endlocalize %},{% localize off %}{{ point.y }}{% endlocalize %}{% if not forloop.last %} {% endif %}{% endfor %}"
+                        style="cursor: pointer;"
+                    />
+
+                    <!-- Line graph -->
+                    <polyline
+                        id="graph-line"
+                        fill="none"
+                        stroke="#ffffff"
+                        stroke-width="8"
+                        points="{% for point in history_data %}{% localize off %}{{ point.x }}{% endlocalize %},{% localize off %}{{ point.y }}{% endlocalize %}{% if not forloop.last %} {% endif %}{% endfor %}"
+                        style="pointer-events: none;"
+                    />
+
+                    <!-- Ключевые точки (каждая 5-я) -->
+                    {% for point in history_data %}
+                    {% if forloop.counter0|divisibleby:5 or forloop.first or forloop.last %}
+                    <circle
+                        cx="{% localize off %}{{ point.x }}{% endlocalize %}"
+                        cy="{% localize off %}{{ point.y }}{% endlocalize %}"
+                        r="5"
+                        fill="#ffffff"
+                        stroke="#0a0a0a"
+                        stroke-width="2"
+                    />
+                    {% endif %}
+                    {% endfor %}
+
+                    <!-- Hover point (показывается при наведении) -->
+                    <circle id="hover-point" r="8" fill="#ffffff" stroke="#0a0a0a" stroke-width="2" style="display: none;"/>
+                </svg>
+                <div class="tooltip" id="chart-tooltip">
+                    <div class="tooltip-date" id="tooltip-date"></div>
+                    <div class="tooltip-average" id="tooltip-average"></div>
+                    <div class="tooltip-grades" id="tooltip-grades"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="no-data">
+            <p>Нет оценок. Используй расширение Chrome чтобы загрузить оценки из Vulcan.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Модальные окна для каждого предмета -->
+    {% for subject, subject_data in subjects.items %}
+    <div class="modal" id="modal-{{ forloop.counter }}">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>{{ subject }}</h2>
+                <button class="close-btn" onclick="closeModal('{{ subject|escapejs }}')">Закрыть</button>
+            </div>
+            <div class="grades-list">
+                {% for grade in subject_data.grades %}
+                <div class="grade-item">
+                    <div class="grade-value">{{ grade.value }}</div>
+                    <div class="grade-details">
+                        <p><strong>{{ grade.description|default:"Оценка" }}</strong></p>
+                        <p class="grade-date">{{ grade.date|date:"d.m.Y" }}</p>
+                        {% if grade.teacher %}
+                        <p>Учитель: {{ grade.teacher }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <script>
+        const subjectModalMap = {
+            {% for subject, grades in subjects.items %}
+            '{{ subject|escapejs }}': 'modal-{{ forloop.counter }}',
+            {% endfor %}
+        };
+
+        function openModal(subject) {
+            const modalId = subjectModalMap[subject];
+            if (modalId) {
+                document.getElementById(modalId).classList.add('active');
+            }
+        }
+
+        function closeModal(subject) {
+            const modalId = subjectModalMap[subject];
+            if (modalId) {
+                document.getElementById(modalId).classList.remove('active');
+            }
+        }
+
+        // Закрытие по клику вне модального окна
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // График - интерактивность
+        const historyData = [
+            {% for point in history_data %}
+            {
+                date: '{{ point.date }}',
+                average: {% localize off %}{{ point.average }}{% endlocalize %},
+                x: {% localize off %}{{ point.x }}{% endlocalize %},
+                y: {% localize off %}{{ point.y }}{% endlocalize %},
+                grades: [
+                    {% for g in point.grades %}
+                    {subject: '{{ g.subject|escapejs }}', value: '{{ g.value }}'}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const subjectLines = [
+            {% for line in subject_lines %}
+            {
+                subject: '{{ line.subject|escapejs }}',
+                color: '{{ line.color }}',
+                data: [
+                    {% for point in line.data %}
+                    {
+                        x: {% localize off %}{{ point.x }}{% endlocalize %},
+                        y: {% localize off %}{{ point.y }}{% endlocalize %},
+                        average: {% localize off %}{{ point.average }}{% endlocalize %},
+                        date: '{{ point.date }}'
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const tooltip = document.getElementById('chart-tooltip');
+        const svg = document.getElementById('history-svg');
+        const graphLine = document.getElementById('graph-line-hitarea');
+        const hoverPoint = document.getElementById('hover-point');
+
+        if (svg && tooltip && graphLine) {
+            let currentPoint = null;
+            let hideTimeout = null;
+
+            // Обработчик для основной линии
+            graphLine.addEventListener('mousemove', (e) => {
+                if (hideTimeout) {
+                    clearTimeout(hideTimeout);
+                    hideTimeout = null;
+                }
+
+                const svgRect = svg.getBoundingClientRect();
+                const pt = svg.createSVGPoint();
+                pt.x = e.clientX;
+                pt.y = e.clientY;
+                const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+                let closestPoint = historyData[0];
+                let minDist = Math.abs(historyData[0].x - svgP.x);
+
+                for (let point of historyData) {
+                    const dist = Math.abs(point.x - svgP.x);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closestPoint = point;
+                    }
+                }
+
+                if (currentPoint !== closestPoint) {
+                    currentPoint = closestPoint;
+
+                    hoverPoint.setAttribute('cx', closestPoint.x);
+                    hoverPoint.setAttribute('cy', closestPoint.y);
+                    hoverPoint.style.display = 'block';
+
+                    document.getElementById('tooltip-date').textContent = closestPoint.date;
+                    document.getElementById('tooltip-average').textContent = `Средний процент: ${closestPoint.average}%`;
+
+                    const gradesHtml = closestPoint.grades.map(g =>
+                        `<div class="tooltip-grade">${g.subject}: ${g.value}</div>`
+                    ).join('');
+                    document.getElementById('tooltip-grades').innerHTML = gradesHtml;
+
+                    tooltip.classList.add('active');
+                }
+
+                tooltip.style.left = (e.clientX + 25) + 'px';
+                tooltip.style.top = (e.clientY + 25) + 'px';
+            });
+
+            graphLine.addEventListener('mouseleave', () => {
+                hideTimeout = setTimeout(() => {
+                    tooltip.classList.remove('active');
+                    hoverPoint.style.display = 'none';
+                    currentPoint = null;
+                }, 100);
+            });
+
+            // Обработчики для линий предметов
+            document.querySelectorAll('.subject-line').forEach((line, index) => {
+                line.addEventListener('mouseenter', (e) => {
+                    if (hideTimeout) {
+                        clearTimeout(hideTimeout);
+                        hideTimeout = null;
+                    }
+
+                    const subjectData = subjectLines[index];
+
+                    // Находим ближайшую точку на линии предмета
+                    const svgRect = svg.getBoundingClientRect();
+                    const pt = svg.createSVGPoint();
+                    pt.x = e.clientX;
+                    pt.y = e.clientY;
+                    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+                    let closestPoint = subjectData.data[0];
+                    let minDist = Math.abs(subjectData.data[0].x - svgP.x);
+
+                    for (let point of subjectData.data) {
+                        const dist = Math.abs(point.x - svgP.x);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestPoint = point;
+                        }
+                    }
+
+                    hoverPoint.setAttribute('cx', closestPoint.x);
+                    hoverPoint.setAttribute('cy', closestPoint.y);
+                    hoverPoint.style.display = 'block';
+
+                    document.getElementById('tooltip-date').textContent = closestPoint.date;
+                    document.getElementById('tooltip-average').textContent = `${subjectData.subject}: ${closestPoint.average}%`;
+                    document.getElementById('tooltip-grades').innerHTML = '';
+
+                    tooltip.classList.add('active');
+                    tooltip.style.left = (e.clientX + 25) + 'px';
+                    tooltip.style.top = (e.clientY + 25) + 'px';
+                });
+
+                line.addEventListener('mouseleave', () => {
+                    hideTimeout = setTimeout(() => {
+                        tooltip.classList.remove('active');
+                        hoverPoint.style.display = 'none';
+                    }, 100);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

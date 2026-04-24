@@ -1,0 +1,29 @@
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+db.sqlite3
+.env
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Screenshots
+*.png
+
+# Test files
+test_graph.py
+check_grades.py
+grades_calc.txt
+grades_output.txt
+math_calc.txt
+subjects_list.txt
